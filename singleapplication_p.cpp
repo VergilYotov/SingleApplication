@@ -187,27 +187,25 @@ bool SingleApplicationPrivate::startPrimary( uint timeout )
     return serverThread->isRunning();
 }
 
-bool SingleApplicationPrivate::connectToPrimary( uint timeout ){
-    if( socket == nullptr )
-        socket = new QLocalSocket( this );
+bool SingleApplicationPrivate::connectToPrimary(uint timeout) {
+    if (socket == nullptr)
+        socket = new QLocalSocket(this);
 
-    if( socket->state() == QLocalSocket::ConnectedState )
+    if (socket->state() == QLocalSocket::ConnectedState)
         return true;
 
-    if( socket->state() != QLocalSocket::ConnectingState )
-        socket->connectToServer( blockServerName );
+    if (socket->state() != QLocalSocket::ConnectingState)
+        socket->connectToServer(blockServerName);
 
-    return socket->waitForConnected( timeout );
+    return socket->waitForConnected(timeout);
 }
 
-void SingleApplicationPrivate::notifySecondaryStart( uint timeout )
+void SingleApplicationPrivate::notifySecondaryStart(uint timeout)
 {
-//    SingleApplicationMessage message( SingleApplicationMessage::NewInstance, 0, QByteArray() );
-//    sendApplicationMessage( message, timeout );
-    sendApplicationMessage( SingleApplication::MessageType::NewInstance, QByteArray(), timeout );
+    sendApplicationMessage(SingleApplication::MessageType::NewInstance, QByteArray(), timeout);
 }
 
-//bool SingleApplicationPrivate::sendApplicationMessage( SingleApplicationMessage message, uint timeout )
+//bool SingleApplicationPrivate::sendApplicationMessage(SingleApplicationMessage message, uint timeout)
 //{
 //    SingleApplicationMessage response;
 //    return sendApplicationMessage( message, timeout, response );
@@ -243,13 +241,9 @@ bool SingleApplicationPrivate::sendApplicationMessage( SingleApplication::Messag
 //        // This isn't an acknowledge message
 //        if( response.type != SingleApplicationMessage::Acknowledge )
 //            return false;
-//
-//        return true;
-//    }
 
 qint64 SingleApplicationPrivate::primaryPid() const
 {
-    // Implement the logic to get the primary PID
     if (!connectToPrimary(1000)) {
         return -1;
     }
@@ -271,7 +265,6 @@ qint64 SingleApplicationPrivate::primaryPid() const
 
 QString SingleApplicationPrivate::primaryUser() const
 {
-    // Implement the logic to get the primary user
     if (!connectToPrimary(1000)) {
         return QString();
     }
@@ -296,16 +289,16 @@ QString SingleApplicationPrivate::primaryUser() const
  */
 void SingleApplicationPrivate::slotConnectionEstablished()
 {
-    QLocalSocket *nextConnSocket = server->nextPendingConnection();
+    QLocalSocket *nextConnSocket = serverThread->nextPendingConnection();
 
-    connectionMap.insert( nextConnSocket, ConnectionInfo() );
-    connectionMap[nextConnSocket].coder = new MessageCoder( nextConnSocket );
+    connectionMap.insert(nextConnSocket, ConnectionInfo());
+    connectionMap[nextConnSocket].coder = new MessageCoder(nextConnSocket);
 
-    QObject::connect( nextConnSocket, &QLocalSocket::disconnected, nextConnSocket, &QLocalSocket::deleteLater );
+    QObject::connect(nextConnSocket, &QLocalSocket::disconnected, nextConnSocket, &QLocalSocket::deleteLater);
 
-    QObject::connect( nextConnSocket, &QLocalSocket::destroyed, this,
-        [nextConnSocket, this](){
-            connectionMap.remove( nextConnSocket );
+    QObject::connect(nextConnSocket, &QLocalSocket::destroyed, this,
+        [nextConnSocket, this]() {
+            connectionMap.remove(nextConnSocket);
         }
     );
 }

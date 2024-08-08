@@ -25,6 +25,8 @@
 #include <QDebug>
 #include <QIODevice>
 
+// Constructor for MessageCoder
+// Initializes the QLocalSocket and sets up connections for readyRead and aboutToClose signals
 MessageCoder::MessageCoder(QLocalSocket *socket)
     : socket(socket), dataStream(socket)
 {
@@ -35,6 +37,8 @@ MessageCoder::MessageCoder(QLocalSocket *socket)
     });
 }
 
+// Slot to handle data availability
+// Reads data from the socket and processes it according to the protocol
 void MessageCoder::slotDataAvailable()
 {
     qDebug() << "slotDataAvailable()";
@@ -54,6 +58,7 @@ void MessageCoder::slotDataAvailable()
     while (socket->bytesAvailable() > 0) {
         dataStream.startTransaction();
 
+        // Read and validate magic numbers
         dataStream >> msg.magicNumber0;
         if (msg.magicNumber0 != 0x00) {
             dataStream.abortTransaction();
@@ -75,12 +80,14 @@ void MessageCoder::slotDataAvailable()
             continue;
         }
 
+        // Read and validate protocol version
         dataStream >> msg.protocolVersion;
         if (msg.protocolVersion > 0x00000001) {
             dataStream.abortTransaction();
             continue;
         }
 
+        // Read and validate message type
         dataStream >> msg.type;
         switch (msg.type) {
             case SingleApplication::MessageType::Acknowledge:
@@ -92,12 +99,15 @@ void MessageCoder::slotDataAvailable()
                 continue;
         }
 
+        // Read instance ID and message length
         dataStream >> msg.instanceId;
         dataStream >> msg.length;
-        if (msg.length > 1024 * 1024) {
+        if (msg.length > 1024 * 1024) { // Validate message length
             dataStream.abortTransaction();
             continue;
         }
+
+        // Read message content
         msg.content = QByteArray(msg.length, Qt::Uninitialized);
         int bytesRead = dataStream.readRawData(msg.content.data(), msg.length);
         if (bytesRead == -1) {
@@ -133,6 +143,7 @@ void MessageCoder::slotDataAvailable()
             continue;
         }
 
+        // Read and validate checksum
         dataStream >> msg.checksum;
         switch (dataStream.status()) {
             case QDataStream::Ok:
@@ -160,6 +171,7 @@ void MessageCoder::slotDataAvailable()
             continue;
         }
 
+        // Commit the transaction and emit the messageReceived signal
         if (dataStream.commitTransaction()) {
             qDebug() << "Message received:" << msg.type << msg.instanceId << msg.content;
             emit messageReceived(SingleApplication::Message{
@@ -171,10 +183,12 @@ void MessageCoder::slotDataAvailable()
     }
 }
 
+// Function to send a message
+// Constructs and sends a message according to the protocol
 bool MessageCoder::sendMessage(SingleApplication::MessageType type, quint16 instanceId, QByteArray content)
 {
     qDebug() << "sendMessage()";
-    if (content.size() > 1024 * 1024) {
+    if (content.size() > 1024 * 1024) { // Validate message content size
         qWarning() << "Message content size exceeds maximum allowed size of 1MiB";
         return false;
     }
@@ -187,6 +201,7 @@ bool MessageCoder::sendMessage(SingleApplication::MessageType type, quint16 inst
     dataStream.setVersion(QDataStream::QDataStream::Qt_5_15);
 #endif
 
+    // Write message components to the data stream
     dataStream << 0x00010002; // Magic number
     dataStream << (quint32)0x00000001; // Protocol version
     dataStream << static_cast<quint8>(type); // Message type

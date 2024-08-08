@@ -21,7 +21,6 @@ void ServerThread::run()
         delete m_server;
         return;
     }
-
     while (!m_quit) {
         if (m_server->waitForNewConnection(100)) {
             QLocalSocket *socket = m_server->nextPendingConnection();
