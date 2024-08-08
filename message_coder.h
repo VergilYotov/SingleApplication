@@ -26,7 +26,8 @@
 
 #include <QByteArray>
 #include <QException>
-
+#include <QLocalSocket>
+#include <QDataStream>
 #include "singleapplication.h"
 
 class MessageCoder : public QObject {
@@ -34,28 +35,44 @@ Q_OBJECT
 public:
     /**
      * @brief Constructs MessageCoder from a QLocalSocket
-     * @param message
+     * 
+     * Initializes the QLocalSocket and sets up connections for readyRead and aboutToClose signals.
+     * 
+     * @param socket The QLocalSocket to be used for communication.
      */
     MessageCoder( QLocalSocket *socket );
 
     /**
-     * @brief Send a MessageCoder on a QDataStream
-     * @param type
-     * @param instanceId
-     * @param content
+     * @brief Send a message on a QDataStream
+     * 
+     * Constructs and sends a message according to the protocol.
+     * 
+     * @param type The type of the message to be sent.
+     * @param instanceId The ID of the instance sending the message.
+     * @param content The content of the message to be sent.
+     * @return true if the message was sent successfully, false otherwise.
      */
     bool sendMessage( SingleApplication::MessageType type, quint16 instanceId, QByteArray content );
 
 Q_SIGNALS:
+    /**
+     * @brief Signal emitted when a message is received.
+     * 
+     * @param message The received message.
+     */
     void messageReceived( SingleApplication::Message message );
 
 private Q_SLOTS:
+    /**
+     * @brief Slot to handle data availability.
+     * 
+     * Reads data from the socket and processes it according to the protocol.
+     */
     void slotDataAvailable();
 
-
 private:
-    QLocalSocket *socket;
-    QDataStream dataStream;
+    QLocalSocket *socket; ///< The QLocalSocket used for communication.
+    QDataStream dataStream; ///< The QDataStream used for reading and writing data.
 };
 
 
