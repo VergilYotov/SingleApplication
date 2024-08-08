@@ -38,32 +38,10 @@ struct SingleApplicationMessage {
     QByteArray content;
     bool invalid;
 
-    /**
-     * @brief Create an unitialized SingleApplicationMessage
-     * The message is initialized with invalid = true
-     */
     SingleApplicationMessage();
-
-    /**
-     * @brief Create a SingleApplicationMessage
-     * @param type
-     * @param instanceId
-     * @param content
-     */
-    SingleApplicationMessage( MessageType type, quint16 instanceId, QByteArray content );
-
-    /**
-     * @brief Create a SingleApplicationMessage from a QByteArray containing a message
-     * @param message
-     */
-    SingleApplicationMessage( QByteArray message );
-
-    /**
-     * @brief Convert a SingleApplicationMessage to a QByteArray
-     * @return QByteArray
-     */
+    SingleApplicationMessage(MessageType type, quint16 instanceId, QByteArray content);
+    SingleApplicationMessage(QByteArray message);
     operator QByteArray();
 };
-
 
 #endif // SINGLEAPPLICATIONMESSAGE_H

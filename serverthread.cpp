@@ -29,8 +29,15 @@ void ServerThread::run()
             } else {
                 emit error(m_server->errorString());
             }
+        } else if (m_server->hasPendingConnections()) {
+            QLocalSocket *socket = m_server->nextPendingConnection();
+            if (socket) {
+                emit newConnection(socket);
+            } else {
+                emit error(m_server->errorString());
+            }
         }
-        
+
         m_mutex.lock();
         if (m_quit) {
             m_mutex.unlock();
@@ -42,11 +49,6 @@ void ServerThread::run()
     m_server->close();
     delete m_server;
 }
-            break;
-        }
-        m_mutex.unlock();
-    }
-
     m_server->close();
     delete m_server;
 }

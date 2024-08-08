@@ -92,6 +92,7 @@ public:
     QLocalServer *server;
     ServerThread *serverThread;
     quint32 instanceNumber;
+    quint32 instanceCounter;
     QString blockServerName;
     SingleApplication::Options options;
     QMap<QLocalSocket*, ConnectionInfo> connectionMap;
@@ -99,6 +100,6 @@ public:
 
 public Q_SLOTS:
     void slotConnectionEstablished();
+    void pingSecondaryInstances();
 };
-
 #endif // SINGLEAPPLICATION_P_H

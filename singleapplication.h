@@ -80,10 +80,6 @@ public:
          */
         System = 1 << 1,
         /**
-         * Whether to trigger `instanceStarted()` even whenever secondary instances are started
-         */
-        SecondaryNotification = 1 << 2,
-        /**
          * Excludes the application version from the server name (and memory block) hash
          */
         ExcludeAppVersion = 1 << 3,

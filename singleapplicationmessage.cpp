@@ -26,59 +26,59 @@
 #include <QIODevice>
 
 SingleApplicationMessage::SingleApplicationMessage()
-    : invalid( true )
+    : invalid(true)
 {
 }
 
-SingleApplicationMessage::SingleApplicationMessage( MessageType type, quint16 instanceId, QByteArray content )
-    : type( type ), instanceId( instanceId ), content( content ), invalid( false )
+SingleApplicationMessage::SingleApplicationMessage(MessageType type, quint16 instanceId, QByteArray content)
+    : type(type), instanceId(instanceId), content(content), invalid(false)
 {}
 
-SingleApplicationMessage::SingleApplicationMessage( QByteArray message )
-    : invalid( false )
+SingleApplicationMessage::SingleApplicationMessage(QByteArray message)
+    : invalid(false)
 {
-        QDataStream dataStream( &message, QIODevice::ReadOnly );
-        qsizetype messageLength;
-        quint16 messageChecksum;
+    QDataStream dataStream(&message, QIODevice::ReadOnly);
+    qsizetype messageLength;
+    quint16 messageChecksum;
 
-        dataStream >> type;
-        dataStream >> instanceId;
-        dataStream >> messageLength;
-        if( (qsizetype)(message.size() - sizeof(type) - sizeof(messageLength) - sizeof(quint16)) < messageLength ){
-            invalid = true;
-            return;
-        }
-        content = QByteArray( messageLength, Qt::Uninitialized );
-        dataStream.readRawData( content.data(), messageLength );
-        dataStream >> messageChecksum;
+    dataStream >> type;
+    dataStream >> instanceId;
+    dataStream >> messageLength;
+    if ((qsizetype)(message.size() - sizeof(type) - sizeof(messageLength) - sizeof(quint16)) < messageLength) {
+        invalid = true;
+        return;
+    }
+    content = QByteArray(messageLength, Qt::Uninitialized);
+    dataStream.readRawData(content.data(), messageLength);
+    dataStream >> messageChecksum;
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        const quint16 computedChecksum = qChecksum( QByteArray(message.constData(), static_cast<quint32>( message.length() - sizeof(quint16) )));
+    const quint16 computedChecksum = qChecksum(QByteArray(message.constData(), static_cast<quint32>(message.length() - sizeof(quint16))));
 #else
-        const quint16 computedChecksum = qChecksum( message.constData(), static_cast<quint32>( message.length() - sizeof(quint16) ));
+    const quint16 computedChecksum = qChecksum(message.constData(), static_cast<quint32>(message.length() - sizeof(quint16)));
 #endif
 
-        if( messageChecksum != computedChecksum )
-            invalid = true;
-    }
+    if (messageChecksum != computedChecksum)
+        invalid = true;
+}
 
-SingleApplicationMessage:: operator QByteArray()
+SingleApplicationMessage::operator QByteArray()
 {
     QByteArray message;
-    QDataStream dataStream( &message, QIODevice::WriteOnly );
+    QDataStream dataStream(&message, QIODevice::WriteOnly);
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
     dataStream.setVersion(QDataStream::Qt_5_6);
 #endif
 
-    dataStream << static_cast<quint8>( type );
+    dataStream << static_cast<quint8>(type);
     dataStream << instanceId;
     dataStream << (qsizetype)content.size();
     dataStream << content;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    quint16 checksum = qChecksum( QByteArray( message.constData(), static_cast<quint32>( message.length() )));
+    quint16 checksum = qChecksum(QByteArray(message.constData(), static_cast<quint32>(message.length())));
 #else
-    quint16 checksum = qChecksum( message.constData(), static_cast<quint32>( messageMsg.length() ));
+    quint16 checksum = qChecksum(message.constData(), static_cast<quint32>(message.length()));
 #endif
     dataStream << checksum;
 
