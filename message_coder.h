@@ -26,7 +26,8 @@
 
 #include <QByteArray>
 #include <QException>
-
+#include <QLocalSocket>
+#include <QDataStream>
 #include "singleapplication.h"
 
 class MessageCoder : public QObject {

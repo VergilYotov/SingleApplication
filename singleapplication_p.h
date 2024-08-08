@@ -40,6 +40,7 @@
 #include "singleapplication.h"
 #include "message_coder.h"
 #include "singleapplicationmessage.h"
+#include "serverthread.h"
 
 struct InstancesInfo {
     bool primary;
@@ -89,6 +90,7 @@ public:
     SingleApplication *q_ptr;
     QLocalSocket *socket;
     QLocalServer *server;
+    ServerThread *serverThread;
     quint32 instanceNumber;
     QString blockServerName;
     SingleApplication::Options options;
