@@ -205,12 +205,6 @@ void SingleApplicationPrivate::notifySecondaryStart(uint timeout)
     sendApplicationMessage(SingleApplication::MessageType::NewInstance, QByteArray(), timeout);
 }
 
-//bool SingleApplicationPrivate::sendApplicationMessage(SingleApplicationMessage message, uint timeout)
-//{
-//    SingleApplicationMessage response;
-//    return sendApplicationMessage( message, timeout, response );
-//}
-
 bool SingleApplicationPrivate::sendApplicationMessage( SingleApplication::MessageType messageType, QByteArray content, uint timeout )
 {
     QElapsedTimer elapsedTime;
@@ -248,19 +242,6 @@ bool SingleApplicationPrivate::sendApplicationMessage( SingleApplication::Messag
 
     return false;
 }
-//        response = SingleApplicationMessage( socket->readAll() );
-//
-//        // The response message is invalid
-//        if( response.invalid )
-//            return false;
-//
-//        // The response message didn't contain the primary instance id
-//        if( response.instanceId != 0 )
-//            return false;
-//
-//        // This isn't an acknowledge message
-//        if( response.type != SingleApplicationMessage::Acknowledge )
-//            return false;
 
 qint64 SingleApplicationPrivate::primaryPid() const
 {
@@ -325,22 +306,13 @@ void SingleApplicationPrivate::slotConnectionEstablished()
             connectionMap.remove(nextConnSocket);
         }
     );
-}
-    QObject::connect(nextConnSocket, &QLocalSocket::destroyed, this,
+
+    // Handle incoming messages
+    QObject::connect(nextConnSocket, &QLocalSocket::readyRead, this,
         [nextConnSocket, this]() {
-            connectionMap.remove(nextConnSocket);
+            connectionMap[nextConnSocket].coder->receiveMessage();
         }
     );
-}
-
-void SingleApplicationPrivate::randomSleep()
-{
-#if QT_VERSION >= QT_VERSION_CHECK( 5, 10, 0 )
-    QThread::msleep( QRandomGenerator::global()->bounded( 8u, 18u ));
-#else
-    qsrand( QDateTime::currentMSecsSinceEpoch() % std::numeric_limits<uint>::max() );
-    QThread::msleep( qrand() % 11 + 8);
-#endif
 }
 
 void SingleApplicationPrivate::addAppData(const QString &data)
