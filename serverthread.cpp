@@ -24,12 +24,24 @@ void ServerThread::run()
     while (!m_quit) {
         if (m_server->waitForNewConnection(100)) {
             QLocalSocket *socket = m_server->nextPendingConnection();
-            emit newConnection(socket);
+            if (socket) {
+                emit newConnection(socket);
+            } else {
+                emit error(m_server->errorString());
+            }
         }
         
         m_mutex.lock();
         if (m_quit) {
             m_mutex.unlock();
+            break;
+        }
+        m_mutex.unlock();
+    }
+
+    m_server->close();
+    delete m_server;
+}
             break;
         }
         m_mutex.unlock();

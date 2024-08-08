@@ -223,11 +223,31 @@ bool SingleApplicationPrivate::sendApplicationMessage( SingleApplication::Messag
     coder.sendMessage( messageType, instanceNumber, content );
 
     socket->flush();
-    return socket->waitForBytesWritten( qMax(timeout - elapsedTime.elapsed(), 1) );
+    if (!socket->waitForBytesWritten( qMax(timeout - elapsedTime.elapsed(), 1) ))
+        return false;
 
-    // TODO: Wait for an ACK message
-//    if( socket->waitForReadyRead( timeout )){
-//        QByteArray responseBytes = socket->readAll();
+    // Wait for an ACK message
+    if( socket->waitForReadyRead( timeout )){
+        QByteArray responseBytes = socket->readAll();
+        SingleApplicationMessage response = SingleApplicationMessage( responseBytes );
+
+        // The response message is invalid
+        if( response.invalid )
+            return false;
+
+        // The response message didn't contain the primary instance id
+        if( response.instanceId != 0 )
+            return false;
+
+        // This isn't an acknowledge message
+        if( response.type != SingleApplication::MessageType::Acknowledge )
+            return false;
+
+        return true;
+    }
+
+    return false;
+}
 //        response = SingleApplicationMessage( socket->readAll() );
 //
 //        // The response message is invalid
@@ -290,12 +310,22 @@ QString SingleApplicationPrivate::primaryUser() const
 void SingleApplicationPrivate::slotConnectionEstablished()
 {
     QLocalSocket *nextConnSocket = serverThread->nextPendingConnection();
+    if (!nextConnSocket) {
+        qWarning() << "Failed to get next pending connection";
+        return;
+    }
 
     connectionMap.insert(nextConnSocket, ConnectionInfo());
     connectionMap[nextConnSocket].coder = new MessageCoder(nextConnSocket);
 
     QObject::connect(nextConnSocket, &QLocalSocket::disconnected, nextConnSocket, &QLocalSocket::deleteLater);
 
+    QObject::connect(nextConnSocket, &QLocalSocket::destroyed, this,
+        [nextConnSocket, this]() {
+            connectionMap.remove(nextConnSocket);
+        }
+    );
+}
     QObject::connect(nextConnSocket, &QLocalSocket::destroyed, this,
         [nextConnSocket, this]() {
             connectionMap.remove(nextConnSocket);
